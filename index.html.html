@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options Trading System - Oliver Kell & Stage Analysis</title>
+    <style>
+        :root {
+            --color-background: #fcfcf9;
+            --color-surface: #fffffe;
+            --color-text: #133334;
+            --color-text-secondary: #626c71;
+            --color-primary: #21808d;
+            --color-primary-hover: #1d7480;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-success: #21808d;
+            --color-error: #c0152f;
+            --color-warning: #a84b2f;
+            --color-card-border: rgba(94, 82, 64, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: #1f2121;
+                --color-surface: #262828;
+                --color-text: #f5f5f5;
+                --color-text-secondary: rgba(167, 169, 169, 0.7);
+                --color-primary: #32b8c6;
+                --color-primary-hover: #2da6b2;
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-card-border: rgba(119, 124, 124, 0.2);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        h2 {
+            font-size: 24px;
+            margin: 30px 0 15px 0;
+            color: var(--color-text);
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            color: var(--color-primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 30px 0 20px 0;
+            border-bottom: 2px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: var(--color-text);
+            background: rgba(33, 128, 141, 0.05);
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .rule-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .rule-number {
+            display: inline-block;
+            background: var(--color-primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .rule-title {
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .rule-detail {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .stage-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .stage-1 { background: rgba(192, 21, 47, 0.15); color: #c0152f; }
+        .stage-1b { background: rgba(168, 75, 47, 0.15); color: #a84b2f; }
+        .stage-2 { background: rgba(33, 128, 141, 0.15); color: #21808d; }
+        .stage-3 { background: rgba(168, 75, 47, 0.15); color: #a84b2f; }
+        .stage-4 { background: rgba(192, 21, 47, 0.15); color: #c0152f; }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--color-text);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--color-primary-hover);
+        }
+
+        button.secondary {
+            background: rgba(94, 82, 64, 0.12);
+            color: var(--color-text);
+        }
+
+        button.secondary:hover {
+            background: rgba(94, 82, 64, 0.2);
+        }
+
+        button.delete {
+            background: var(--color-error);
+        }
+
+        button.delete:hover {
+            background: #a0122a;
+        }
+
+        .journal-entry, .trade-entry {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .journal-date, .trade-date {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+        }
+
+        .journal-content {
+            color: var(--color-text);
+            white-space: pre-wrap;
+            margin-bottom: 8px;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .entry-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--color-text);
+            background: rgba(33, 128, 141, 0.05);
+        }
+
+        .winner {
+            color: var(--color-success);
+            font-weight: 600;
+        }
+
+        .loser {
+            color: var(--color-error);
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: rgba(33, 128, 141, 0.1);
+            border: 1px solid rgba(33, 128, 141, 0.3);
+            color: var(--color-success);
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .two-col, .rules-grid, .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+            }
+
+            .tab {
+                white-space: nowrap;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Options Trading System</h1>
+        <p style="color: var(--color-text-secondary); margin-bottom: 20px;">Oliver Kell System + Stage Analysis Framework</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('ruleset')">Trading Ruleset</button>
+            <button class="tab" onclick="switchTab('journal')">Daily Journal</button>
+            <button class="tab" onclick="switchTab('tracker')">Trade Tracker</button>
+            <button class="tab" onclick="switchTab('stats')">Performance Stats</button>
+        </div>
+
+        <!-- RULESET TAB -->
+        <div id="ruleset" class="tab-content active">
+            <div class="card">
+                <h2>🎯 Core Trading Rules - Oliver Kell System</h2>
+                <div class="rules-grid">
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">1</span>Put Risk First</div>
+                        <div class="rule-detail">Always define your risk before entering. Know your stop loss, position size, and maximum loss tolerance. Risk management trumps profit potential.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">2</span>Plan Your Trade</div>
+                        <div class="rule-detail">If you fail to plan, you are planning to fail. Document entry, stop, target, and thesis before trade execution.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">3</span>Trust Your Stops</div>
+                        <div class="rule-detail">Don't trust your stocks, trust your stops. Honor your stop losses without hesitation. The market doesn't care about your opinion.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">4</span>Better Out Than In</div>
+                        <div class="rule-detail">Better to be out and want in, than in and want out. When in doubt, reduce position or exit. You can always re-enter.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">5</span>P&amp;L Guides Aggression</div>
+                        <div class="rule-detail">Let your P&amp;L guide your level of aggression. When winning, increase size carefully. When losing, reduce size and go back to basics.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">6</span>Only Price Pays</div>
+                        <div class="rule-detail">Opinions, news, and narratives don't matter. Only price action pays. Follow the chart, not the story.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">7</span>Sell Into Strength</div>
+                        <div class="rule-detail">Sell into strength or you will sell into weakness. Take profits when the stock is moving up, not when it's collapsing.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">8</span>Failed Moves = Fast Moves</div>
+                        <div class="rule-detail">From failed moves come fast moves. When a breakout fails, expect rapid reversal. When support breaks, downside accelerates.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">9</span>No Earnings Gambles</div>
+                        <div class="rule-detail">Don't gamble on earnings. Options decay accelerates and IV crush is real. Either exit before earnings or size very small.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">10</span>No Extended Stocks</div>
+                        <div class="rule-detail">Don't buy extended stocks. First third of move = best risk/reward. Wait for consolidation and next clean setup.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">11</span>Sell Losers Quickly</div>
+                        <div class="rule-detail">Sell your losers quickly, always. Small losses are acceptable, big losses destroy accounts. Cut fast, cut clean.</div>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-title"><span class="rule-number">12</span>Never Average Down</div>
+                        <div class="rule-detail">Never average down on options. Only average up on winners. Losers get smaller, winners get bigger.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Stage Analysis Entry Rules</h2>
+                
+                <h3><span class="stage-indicator stage-1b">Stage 1B</span>Basing Completion - High Risk</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary);">
+                    <li><strong>Entry Signal:</strong> Stock breaking above 10-week SMA with volume, forming higher lows</li>
+                    <li><strong>Confirmation:</strong> 10-week crosses above 40-week, weekly chart showing accumulation</li>
+                    <li><strong>Options Strategy:</strong> Small position ATM calls, 45-60 DTE (Days to Expiration)</li>
+                    <li><strong>Stop Loss:</strong> Below most recent swing low or base breakdown (-7% to -10%)</li>
+                    <li><strong>Risk Level:</strong> Highest risk - use smallest position size (25-30% normal size)</li>
+                </ul>
+
+                <h3><span class="stage-indicator stage-2">Stage 2</span>Advancing Phase - Best Risk/Reward</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary);">
+                    <li><strong>Entry Signal:</strong> Breakout above Stage 1 resistance on strong volume, clean 10-EMA &amp; 20-EMA crossback</li>
+                    <li><strong>Confirmation:</strong> Higher highs, higher lows, trading above 50-day SMA, RS line improving</li>
+                    <li><strong>Options Strategy:</strong> Full position ATM or slightly ITM calls, 30-60 DTE</li>
+                    <li><strong>Stop Loss:</strong> Below breakout pivot or 20-day EMA (-4% to -7%)</li>
+                    <li><strong>Risk Level:</strong> Optimal - first third of Stage 2 offers best risk/reward</li>
+                </ul>
+
+                <h3><span class="stage-indicator stage-2">Stage 2 Continuation</span>Mid-Stage Pullback</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary);">
+                    <li><strong>Entry Signal:</strong> Pullback to 10-day, 20-day, or 50-day SMA, wedge pop formation</li>
+                    <li><strong>Confirmation:</strong> Volume dries up on pullback, increases on reversal, EMAs still rising</li>
+                    <li><strong>Options Strategy:</strong> Starter position, scale up if working, 30-45 DTE</li>
+                    <li><strong>Stop Loss:</strong> Below pullback low or key moving average (-5% to -8%)</li>
+                    <li><strong>Risk Level:</strong> Medium - depends on extension from base</li>
+                </ul>
+
+                <h3><span class="stage-indicator stage-3">Stage 3</span>Topping Phase - AVOID</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary);">
+                    <li><strong>Characteristics:</strong> Choppy price action, 10-week crossing below 40-week, distribution</li>
+                    <li><strong>Action:</strong> Exit longs, take profits, move stops to cost. No new long entries.</li>
+                    <li><strong>Options Strategy:</strong> Close calls, consider puts for short setup if clear Stage 4 developing</li>
+                </ul>
+
+                <h3><span class="stage-indicator stage-4">Stage 4</span>Declining Phase - SHORT ONLY</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary);">
+                    <li><strong>Entry Signal:</strong> Breakdown below Stage 3 support, 10-week clearly below 40-week</li>
+                    <li><strong>Confirmation:</strong> Lower highs, lower lows, below 50-day and 200-day, RS line weak</li>
+                    <li><strong>Options Strategy:</strong> ATM or slightly OTM puts, 30-60 DTE</li>
+                    <li><strong>Stop Loss:</strong> Above recent swing high or breakdown resistance (+5% to +8%)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Options-Specific Rules</h2>
+                
+                <div class="two-col">
+                    <div>                <h3>Contract Selection</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Time Decay:</strong> 30-60 DTE for swing trades, 45-90 DTE for position trades</li>
+                    <li><strong>Strike Selection:</strong> ATM or slightly ITM for lower risk, OTM for aggressive plays</li>
+                    <li><strong>Liquidity:</strong> Minimum 100 daily volume, tight bid-ask spread (under 10% of premium)</li>
+                    <li><strong>Weekly Options:</strong> See "Weekly Trading Rules" section below for small account strategy</li>
+                </ul>
+                    </div>
+                    <div>
+                        <h3>Position Sizing</h3>
+                        <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                            <li><strong>Max Risk Per Trade:</strong> 1-2% of account on any single options trade</li>
+                            <li><strong>Options Allocation:</strong> No more than 20-30% of portfolio in options at once</li>
+                            <li><strong>Scale In:</strong> Start with 1/3 position, add on confirmation</li>
+                            <li><strong>Never Go Full Size:</strong> Options volatility demands smaller sizing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Profit Taking Strategy</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Free Roll Target:</strong> Sell 1/3 to 1/2 at +50% to +100% to recover cost basis</li>
+                    <li><strong>Scale Out:</strong> Take 1/3 at R1 target, 1/3 at R2, let 1/3 run with trailing stop</li>
+                    <li><strong>Time-Based Exit:</strong> Consider exiting at 14 DTE even if winning (theta acceleration)</li>
+                    <li><strong>IV Crush Awareness:</strong> Exit before earnings or major catalyst events</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>⚡ Weekly Options Trading Rules (Small Account Builder)</h2>
+                
+                <div class="alert" style="background: rgba(168, 75, 47, 0.1); border: 1px solid var(--color-warning); color: var(--color-warning); margin-bottom: 20px;">
+                    <strong>⚠️ High Risk Strategy:</strong> Weeklies have extreme theta decay and require precise timing. Only use with strict discipline and small position sizing.
+                </div>
+
+                <h3>When to Trade Weeklies</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Account Size:</strong> Under $5,000 where 30+ DTE contracts are too expensive</li>
+                    <li><strong>Strong Conviction Only:</strong> Clear Stage 2 momentum plays with catalyst (not random speculation)</li>
+                    <li><strong>Short Hold Time:</strong> Plan to hold 1-3 days maximum, not full week</li>
+                    <li><strong>High Probability Setups:</strong> Bull flags, wedge pops, clean breakouts with volume</li>
+                </ul>
+
+                <h3>Weekly Options Entry Rules</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Monday/Tuesday Entry:</strong> Enter early week (Mon-Tue), avoid Thursday/Friday entries</li>
+                    <li><strong>Stage 2 Confirmed:</strong> Stock must be in clear Stage 2, above 10/20 EMA, 50-day rising</li>
+                    <li><strong>Catalyst Present:</strong> Sector rotation, market strength, breakout in progress</li>
+                    <li><strong>Volume Confirmation:</strong> Above-average volume on entry day (1.5x+ daily average)</li>
+                    <li><strong>Strike Selection:</strong> ATM or 1 strike OTM maximum (avoid deep OTM lottery tickets)</li>
+                    <li><strong>Expiration:</strong> Current week or next week only (5-12 days to expiration)</li>
+                </ul>
+
+                <h3>Position Sizing for Weeklies</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Max Risk:</strong> 1-2% of total account per trade (same as regular options)</li>
+                    <li><strong>Smaller Contract Count:</strong> Buy fewer contracts than you think (they move fast)</li>
+                    <li><strong>No All-In:</strong> Never use more than 20% of account on single weekly trade</li>
+                    <li><strong>Scale In Forbidden:</strong> Enter full position at once (no time to scale with weeklies)</li>
+                </ul>
+
+                <h3>Exit Strategy for Weeklies (CRITICAL)</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>+30% Rule:</strong> Take profit at +30% minimum. Don't get greedy with theta decay.</li>
+                    <li><strong>+50% Auto-Sell:</strong> Sell at least 50% of position at +50% gain</li>
+                    <li><strong>+100% Exit All:</strong> If you hit +100%, sell everything immediately (rare, don't push it)</li>
+                    <li><strong>Daily Close Rule:</strong> If trade not working by market close Day 1, consider exiting</li>
+                    <li><strong>No Overnight Holding (Optional):</strong> For very aggressive traders, close all weeklies EOD</li>
+                    <li><strong>Wednesday Exit:</strong> Exit all remaining positions by Wednesday close (theta accelerates Thursday/Friday)</li>
+                    <li><strong>Down 25% = Cut:</strong> If down 25% from entry, exit immediately no questions asked</li>
+                </ul>
+
+                <h3>Weekly Options DON'Ts</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>❌ No Earnings Holds:</strong> NEVER hold weeklies through earnings (IV crush will destroy you)</li>
+                    <li><strong>❌ No FOMC/Fed Days:</strong> Avoid weeklies on major Fed announcement days</li>
+                    <li><strong>❌ No Averaging Down:</strong> If weekly goes against you, cut it. Never add to loser.</li>
+                    <li><strong>❌ No Hoping:</strong> Don't hold losing weeklies hoping for recovery. Time decay is relentless.</li>
+                    <li><strong>❌ No Extended Stocks:</strong> Don't buy weeklies on stocks already up 20%+ in short time</li>
+                    <li><strong>❌ No Low Liquidity:</strong> Weekly contracts must have 50+ daily volume minimum</li>
+                </ul>
+
+                <h3>Building a Small Account with Weeklies</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>High Win Rate Focus:</strong> You need 60%+ win rate to overcome losses. Be selective.</li>
+                    <li><strong>Compound Wins:</strong> After 3 consecutive winners, increase position size by 25%</li>
+                    <li><strong>After Loss, Shrink:</strong> After any loss, reduce next position size by 50%</li>
+                    <li><strong>Track Weekly Results:</strong> Document every weekly trade separately from regular trades</li>
+                    <li><strong>Transition Goal:</strong> Once account reaches $5K-10K, transition to 30+ DTE contracts</li>
+                    <li><strong>Weekly Budget:</strong> Limit weekly trades to 2-3 per week maximum (overtrading kills)</li>
+                </ul>
+
+                <h3>Best Stocks for Weekly Options</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>High Volume:</strong> SPY, QQQ, AAPL, TSLA, NVDA, AMD, MSFT (liquid options)</li>
+                    <li><strong>High IV:</strong> Stocks with elevated implied volatility (options move more)</li>
+                    <li><strong>Clear Trends:</strong> Strong Stage 2 momentum stocks, not choppy Stage 3</li>
+                    <li><strong>Sector Leaders:</strong> Leading stocks in leading sectors (use Finviz screener)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>🛑 Webull Stop Loss Practices</h2>
+                
+                <h3>Initial Stop Loss (Entry)</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Set Immediately:</strong> Place stop order the second you enter position (separate order window)</li>
+                    <li><strong>Stop Type:</strong> Use LIMIT orders, not market orders (prevents slippage on options)</li>
+                    <li><strong>Stage 2 Breakout:</strong> Stop at -5% to -7% below breakout point or pivot low</li>
+                    <li><strong>Stage 2 Pullback:</strong> Stop at -5% to -8% below entry or key moving average</li>
+                    <li><strong>Stage 1B/Early:</strong> Wider stop -7% to -10% (more volatile)</li>
+                </ul>
+
+                <h3>Trailing Stops on Webull (For Winners)</h3>
+                <p style="color: var(--color-text-secondary); margin: 10px 0;"><strong>⚠️ Important:</strong> Webull trailing stops are DAY orders only, NOT GTC. You must reset them daily.</p>
+                
+                <h4>How to Set Trailing Stop on Webull:</h4>
+                <ol style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li>Open position → Click "Sell" → Select "Trailing Stop"</li>
+                    <li>Choose between $ amount or % trailing (recommend % for options)</li>
+                    <li>Set trail percentage: <strong>15-20%</strong> for options volatility</li>
+                    <li>Set daily before market open (trailing stops don't carry overnight)</li>
+                </ol>
+
+                <h4>Trailing Stop Strategy:</h4>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Once +25% profit:</strong> Move stop to breakeven (cost basis)</li>
+                    <li><strong>Once +50% profit:</strong> Lock in +25% with trailing stop</li>
+                    <li><strong>Once +100% profit:</strong> Take 1/3 to 1/2 off, trail remainder at 15-20%</li>
+                    <li><strong>For multi-day holds:</strong> Trail at 10-day EMA or 20-day EMA (check daily)</li>
+                    <li><strong>For runners:</strong> Switch to manual stops at key support levels vs. trailing %</li>
+                </ul>
+
+                <h3>Manual Stop Adjustments (Alternative to Trailing)</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>Daily Task:</strong> Adjust stop loss every morning based on previous day's action</li>
+                    <li><strong>Stage 2 In Motion:</strong> Raise stop to below prior day low or last support</li>
+                    <li><strong>Use Technical Levels:</strong> Trail below 10-EMA (aggressive) or 20-EMA (conservative)</li>
+                    <li><strong>Never Lower Stops:</strong> Stops only move up on winners, never down</li>
+                </ul>
+
+                <h3>Emergency Exit Rules</h3>
+                <ul style="margin-left: 20px; color: var(--color-text-secondary); line-height: 1.8;">
+                    <li><strong>20-EMA Break:</strong> If stock decisively loses 20-day EMA, exit immediately</li>
+                    <li><strong>Stage Change:</strong> Any sign of Stage 2 → Stage 3 transition, exit</li>
+                    <li><strong>Market Crash:</strong> If SPY breaks major support, close all options immediately</li>
+                    <li><strong>Down 20%:</strong> If option down 20% from entry, exit no excuses (stop didn't fill)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>✅ Pre-Trade Checklist</h2>
+                <ul class="checklist">
+                    <li><input type="checkbox"> Stock is in Stage 2 (advancing) or clear Stage 2 continuation setup</li>
+                    <li><input type="checkbox"> 10-day EMA &gt; 20-day EMA, price above both</li>
+                    <li><input type="checkbox"> 50-day SMA rising, price above 50-day</li>
+                    <li><input type="checkbox"> Volume confirms breakout or reversal (above 20-day avg)</li>
+                    <li><input type="checkbox"> Relative strength vs. SPY is positive or improving</li>
+                    <li><input type="checkbox"> Not extended (within 15% of 50-day SMA)</li>
+                    <li><input type="checkbox"> Options contract has sufficient liquidity (100+ daily volume)</li>
+                    <li><input type="checkbox"> Bid-ask spread is tight (under 10% of premium)</li>
+                    <li><input type="checkbox"> 30+ DTE remaining on contract</li>
+                    <li><input type="checkbox"> No earnings within next 7 days</li>
+                    <li><input type="checkbox"> SPY/QQQ in Stage 2 or at minimum not breaking down</li>
+                    <li><input type="checkbox"> Stop loss level defined (price point)</li>
+                    <li><input type="checkbox"> Position size calculated (1-2% max risk)</li>
+                    <li><input type="checkbox"> Profit targets defined (R1, R2, runner targets)</li>
+                    <li><input type="checkbox"> Trade thesis written in journal before entry</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- JOURNAL TAB -->
+        <div id="journal" class="tab-content">
+            <div class="card">
+                <h2>📝 Daily Trading Journal</h2>
+                <form id="journalForm" onsubmit="addJournalEntry(event)">
+                    <div class="form-group">
+                        <label for="journalDate">Date</label>
+                        <input type="date" id="journalDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="marketCondition">Market Condition (SPY/QQQ Stage)</label>
+                        <select id="marketCondition">
+                            <option value="Stage 2 - Bullish">Stage 2 - Bullish</option>
+                            <option value="Stage 2 Continuation">Stage 2 Continuation</option>
+                            <option value="Stage 3 - Choppy">Stage 3 - Choppy</option>
+                            <option value="Stage 4 - Bearish">Stage 4 - Bearish</option>
+                            <option value="Stage 1 - Basing">Stage 1 - Basing</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tradingPsych">Psychology / Emotional State</label>
+                        <select id="tradingPsych">
+                            <option value="Focused & Disciplined">Focused &amp; Disciplined</option>
+                            <option value="Confident">Confident</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Anxious">Anxious</option>
+                            <option value="Revenge Trading">Revenge Trading</option>
+                            <option value="FOMO">FOMO</option>
+                            <option value="Overconfident">Overconfident</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tradesCount">Number of Trades Today</label>
+                        <input type="number" id="tradesCount" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dailyPnL">Daily P&amp;L ($)</label>
+                        <input type="number" step="0.01" id="dailyPnL" placeholder="Enter as positive or negative">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="journalNotes">What Worked / What Didn't / Key Lessons</label>
+                        <textarea id="journalNotes" rows="6" placeholder="Document your observations, rule adherence, mistakes, and lessons learned..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rulesFollowed">Rules I Followed Today</label>
+                        <textarea id="rulesFollowed" rows="3" placeholder="Which Oliver Kell / Stage Analysis rules did you execute well?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rulesBroken">Rules I Broke Today</label>
+                        <textarea id="rulesBroken" rows="3" placeholder="Which rules did you violate? Why? How to prevent next time?"></textarea>
+                    </div>
+
+                    <button type="submit">Save Journal Entry</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📚 Journal Entries</h2>
+                <div id="journalEntries">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <p>No journal entries yet. Start documenting your trading journey above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRACKER TAB -->
+        <div id="tracker" class="tab-content">
+            <div class="card">
+                <h2>📊 Add Trade to Tracker</h2>
+                <form id="tradeForm" onsubmit="addTrade(event)">
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label for="tradeDate">Date</label>
+                            <input type="date" id="tradeDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ticker">Ticker</label>
+                            <input type="text" id="ticker" placeholder="e.g., NVDA" required style="text-transform: uppercase;">
+                        </div>
+                    </div>
+
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label for="tradeType">Trade Type</label>
+                            <select id="tradeType" required>
+                                <option value="Options Call">Options Call</option>
+                                <option value="Options Put">Options Put</option>
+                                <option value="Stock Long">Stock Long</option>
+                                <option value="Stock Short">Stock Short</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stage">Stage at Entry</label>
+                            <select id="stage" required>
+                                <option value="Stage 1B">Stage 1B - Basing</option>
+                                <option value="Stage 2 Breakout">Stage 2 - Breakout</option>
+                                <option value="Stage 2 Continuation">Stage 2 - Continuation</option>
+                                <option value="Stage 2 Pullback">Stage 2 - Pullback</option>
+                                <option value="Stage 3">Stage 3 - Topping</option>
+                                <option value="Stage 4">Stage 4 - Decline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label for="entryPrice">Entry Price ($)</label>
+                            <input type="number" step="0.01" id="entryPrice" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="exitPrice">Exit Price ($)</label>
+                            <input type="number" step="0.01" id="exitPrice" required>
+                        </div>
+                    </div>
+
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label for="contracts">Contracts / Shares</label>
+                            <input type="number" id="contracts" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="daysInTrade">Days in Trade</label>
+                            <input type="number" id="daysInTrade" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setupNotes">Setup / Entry Reason</label>
+                        <textarea id="setupNotes" rows="3" placeholder="Why did you take this trade? What pattern/setup?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exitReason">Exit Reason</label>
+                        <textarea id="exitReason" rows="3" placeholder="Why did you exit? Stop hit, target reached, time-based, etc."></textarea>
+                    </div>
+
+                    <button type="submit">Add Trade</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📈 Trade History</h2>
+                <div id="tradesList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No trades logged yet. Add your first trade above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS TAB -->
+        <div id="stats" class="tab-content">
+            <div class="card">
+                <h2>📊 Performance Statistics</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTrades">0</div>
+                        <div class="stat-label">Total Trades</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="winRate">0%</div>
+                        <div class="stat-label">Win Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgWinner">$0</div>
+                        <div class="stat-label">Avg Winner</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgLoser">$0</div>
+                        <div class="stat-label">Avg Loser</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="profitFactor">0.00</div>
+                        <div class="stat-label">Profit Factor</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgDays">0</div>
+                        <div class="stat-label">Avg Days in Trade</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🏆 Top 5 Winners</h2>
+                <table id="winnersTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Ticker</th>
+                            <th>Type</th>
+                            <th>P&amp;L</th>
+                            <th>% Gain</th>
+                            <th>Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="winnersBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--color-text-secondary);">No winning trades yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>⚠️ Top 5 Losers</h2>
+                <table id="losersTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Ticker</th>
+                            <th>Type</th>
+                            <th>P&amp;L</th>
+                            <th>% Loss</th>
+                            <th>Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="losersBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--color-text-secondary);">No losing trades yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="export-section">
+                <h3>Export Data</h3>
+                <div class="button-group">
+                    <button onclick="exportTrades()">Export Trades (CSV)</button>
+                    <button onclick="exportJournal()">Export Journal (CSV)</button>
+                    <button onclick="downloadRuleset()">📄 Download Trading Ruleset (PDF-Ready)</button>
+                    <button class="secondary" onclick="clearAllData()">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data from localStorage
+        let trades = JSON.parse(localStorage.getItem('trades')) || [];
+        let journalEntries = JSON.parse(localStorage.getItem('journal')) || [];
+
+        // Set today's date as default
+        document.getElementById('journalDate').valueAsDate = new Date();
+        document.getElementById('tradeDate').valueAsDate = new Date();
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Update displays
+            if (tabName === 'journal') {
+                displayJournalEntries();
+            } else if (tabName === 'tracker') {
+                displayTrades();
+            } else if (tabName === 'stats') {
+                updateStats();
+            }
+        }
+
+        // Journal Entry Functions
+        function addJournalEntry(event) {
+            event.preventDefault();
+
+            const entry = {
+                id: Date.now(),
+                date: document.getElementById('journalDate').value,
+                marketCondition: document.getElementById('marketCondition').value,
+                psychology: document.getElementById('tradingPsych').value,
+                tradesCount: document.getElementById('tradesCount').value,
+                dailyPnL: parseFloat(document.getElementById('dailyPnL').value) || 0,
+                notes: document.getElementById('journalNotes').value,
+                rulesFollowed: document.getElementById('rulesFollowed').value,
+                rulesBroken: document.getElementById('rulesBroken').value
+            };
+
+            journalEntries.push(entry);
+            localStorage.setItem('journal', JSON.stringify(journalEntries));
+
+            // Reset form
+            document.getElementById('journalForm').reset();
+            document.getElementById('journalDate').valueAsDate = new Date();
+
+            // Show success message
+            alert('Journal entry saved successfully!');
+            displayJournalEntries();
+        }
+
+        function displayJournalEntries() {
+            const container = document.getElementById('journalEntries');
+            
+            if (journalEntries.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <p>No journal entries yet. Start documenting your trading journey above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by date descending
+            const sorted = [...journalEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            container.innerHTML = sorted.map(entry => `
+                <div class="journal-entry">
+                    <div class="journal-date">${formatDate(entry.date)} - ${entry.marketCondition}</div>
+                    <div style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 8px;">
+                        Psychology: ${entry.psychology} | Trades: ${entry.tradesCount} | 
+                        P&L: <span class="${entry.dailyPnL >= 0 ? 'winner' : 'loser'}">$${entry.dailyPnL.toFixed(2)}</span>
+                    </div>
+                    <div class="journal-content"><strong>Notes:</strong> ${entry.notes || 'No notes'}</div>
+                    ${entry.rulesFollowed ? `<div class="journal-content"><strong>✅ Rules Followed:</strong> ${entry.rulesFollowed}</div>` : ''}
+                    ${entry.rulesBroken ? `<div class="journal-content"><strong>❌ Rules Broken:</strong> ${entry.rulesBroken}</div>` : ''}
+                    <div class="entry-actions">
+                        <button class="delete" onclick="deleteJournal(${entry.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteJournal(id) {
+            if (confirm('Delete this journal entry?')) {
+                journalEntries = journalEntries.filter(entry => entry.id !== id);
+                localStorage.setItem('journal', JSON.stringify(journalEntries));
+                displayJournalEntries();
+            }
+        }
+
+        // Trade Tracker Functions
+        function addTrade(event) {
+            event.preventDefault();
+
+            const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+            const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+            const contracts = parseInt(document.getElementById('contracts').value);
+            
+            const pnl = (exitPrice - entryPrice) * contracts * 100; // Assuming options, multiply by 100
+            const pnlPercent = ((exitPrice - entryPrice) / entryPrice) * 100;
+
+            const trade = {
+                id: Date.now(),
+                date: document.getElementById('tradeDate').value,
+                ticker: document.getElementById('ticker').value.toUpperCase(),
+                type: document.getElementById('tradeType').value,
+                stage: document.getElementById('stage').value,
+                entryPrice: entryPrice,
+                exitPrice: exitPrice,
+                contracts: contracts,
+                daysInTrade: parseInt(document.getElementById('daysInTrade').value),
+                pnl: pnl,
+                pnlPercent: pnlPercent,
+                isWinner: pnl > 0,
+                setupNotes: document.getElementById('setupNotes').value,
+                exitReason: document.getElementById('exitReason').value
+            };
+
+            trades.push(trade);
+            localStorage.setItem('trades', JSON.stringify(trades));
+
+            // Reset form
+            document.getElementById('tradeForm').reset();
+            document.getElementById('tradeDate').valueAsDate = new Date();
+
+            alert('Trade added successfully!');
+            displayTrades();
+        }
+
+        function displayTrades() {
+            const container = document.getElementById('tradesList');
+            
+            if (trades.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No trades logged yet. Add your first trade above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by date descending
+            const sorted = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            container.innerHTML = sorted.map(trade => `
+                <div class="trade-entry">
+                    <div class="trade-date">
+                        ${formatDate(trade.date)} - ${trade.ticker} - ${trade.type}
+                        <span class="${trade.isWinner ? 'winner' : 'loser'}" style="float: right; font-size: 18px;">
+                            ${trade.isWinner ? '✓' : '✗'} ${trade.pnlPercent >= 0 ? '+' : ''}${trade.pnlPercent.toFixed(2)}%
+                        </span>
+                    </div>
+                    <div style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 8px;">
+                        Stage: ${trade.stage} | Entry: $${trade.entryPrice.toFixed(2)} | Exit: $${trade.exitPrice.toFixed(2)} | 
+                        Days: ${trade.daysInTrade} | P&L: <span class="${trade.isWinner ? 'winner' : 'loser'}">$${trade.pnl.toFixed(2)}</span>
+                    </div>
+                    ${trade.setupNotes ? `<div style="margin: 8px 0; font-size: 14px;"><strong>Setup:</strong> ${trade.setupNotes}</div>` : ''}
+                    ${trade.exitReason ? `<div style="margin: 8px 0; font-size: 14px;"><strong>Exit:</strong> ${trade.exitReason}</div>` : ''}
+                    <div class="entry-actions">
+                        <button class="delete" onclick="deleteTrade(${trade.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteTrade(id) {
+            if (confirm('Delete this trade?')) {
+                trades = trades.filter(trade => trade.id !== id);
+                localStorage.setItem('trades', JSON.stringify(trades));
+                displayTrades();
+            }
+        }
+
+        // Stats Functions
+        function updateStats() {
+            if (trades.length === 0) {
+                return;
+            }
+
+            const winners = trades.filter(t => t.isWinner);
+            const losers = trades.filter(t => !t.isWinner);
+
+            const totalWinAmount = winners.reduce((sum, t) => sum + t.pnl, 0);
+            const totalLossAmount = Math.abs(losers.reduce((sum, t) => sum + t.pnl, 0));
+            const avgWinAmount = winners.length > 0 ? totalWinAmount / winners.length : 0;
+            const avgLossAmount = losers.length > 0 ? totalLossAmount / losers.length : 0;
+
+            document.getElementById('totalTrades').textContent = trades.length;
+            document.getElementById('winRate').textContent = ((winners.length / trades.length) * 100).toFixed(1) + '%';
+            document.getElementById('avgWinner').textContent = '$' + avgWinAmount.toFixed(2);
+            document.getElementById('avgLoser').textContent = '-$' + avgLossAmount.toFixed(2);
+            document.getElementById('profitFactor').textContent = totalLossAmount > 0 ? (totalWinAmount / totalLossAmount).toFixed(2) : 'N/A';
+            
+            const avgDays = trades.reduce((sum, t) => sum + t.daysInTrade, 0) / trades.length;
+            document.getElementById('avgDays').textContent = avgDays.toFixed(1);
+
+            // Update top winners
+            const topWinners = [...winners].sort((a, b) => b.pnl - a.pnl).slice(0, 5);
+            const winnersBody = document.getElementById('winnersBody');
+            if (topWinners.length > 0) {
+                winnersBody.innerHTML = topWinners.map(trade => `
+                    <tr>
+                        <td>${formatDate(trade.date)}</td>
+                        <td>${trade.ticker}</td>
+                        <td>${trade.type}</td>
+                        <td class="winner">$${trade.pnl.toFixed(2)}</td>
+                        <td class="winner">+${trade.pnlPercent.toFixed(2)}%</td>
+                        <td>${trade.daysInTrade}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Update top losers
+            const topLosers = [...losers].sort((a, b) => a.pnl - b.pnl).slice(0, 5);
+            const losersBody = document.getElementById('losersBody');
+            if (topLosers.length > 0) {
+                losersBody.innerHTML = topLosers.map(trade => `
+                    <tr>
+                        <td>${formatDate(trade.date)}</td>
+                        <td>${trade.ticker}</td>
+                        <td>${trade.type}</td>
+                        <td class="loser">$${trade.pnl.toFixed(2)}</td>
+                        <td class="loser">${trade.pnlPercent.toFixed(2)}%</td>
+                        <td>${trade.daysInTrade}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Export Functions
+        function exportTrades() {
+            if (trades.length === 0) {
+                alert('No trades to export');
+                return;
+            }
+
+            const headers = ['Date', 'Ticker', 'Type', 'Stage', 'Entry', 'Exit', 'Contracts', 'Days', 'P&L', 'P&L %', 'Setup', 'Exit Reason'];
+            const rows = trades.map(t => [
+                t.date, t.ticker, t.type, t.stage, t.entryPrice, t.exitPrice, 
+                t.contracts, t.daysInTrade, t.pnl.toFixed(2), t.pnlPercent.toFixed(2),
+                t.setupNotes, t.exitReason
+            ]);
+
+            downloadCSV('trades_export.csv', [headers, ...rows]);
+        }
+
+        function exportJournal() {
+            if (journalEntries.length === 0) {
+                alert('No journal entries to export');
+                return;
+            }
+
+            const headers = ['Date', 'Market Condition', 'Psychology', 'Trades Count', 'Daily P&L', 'Notes', 'Rules Followed', 'Rules Broken'];
+            const rows = journalEntries.map(e => [
+                e.date, e.marketCondition, e.psychology, e.tradesCount, e.dailyPnL,
+                e.notes, e.rulesFollowed, e.rulesBroken
+            ]);
+
+            downloadCSV('journal_export.csv', [headers, ...rows]);
+        }
+
+        function downloadCSV(filename, data) {
+            const csv = data.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
+                if (confirm('Really? This will delete all trades and journal entries permanently.')) {
+                    localStorage.clear();
+                    trades = [];
+                    journalEntries = [];
+                    location.reload();
+                }
+            }
+        }
+
+        function downloadRuleset() {
+            const rulesetContent = `
+OPTIONS TRADING SYSTEM - RULESET & JOURNAL
+Oliver Kell System + Stage Analysis Framework
+Generated: ${new Date().toLocaleDateString()}
+
+═══════════════════════════════════════════════════════════════
+CORE TRADING RULES - OLIVER KELL SYSTEM
+═══════════════════════════════════════════════════════════════
+
+1. PUT RISK FIRST
+   Always define your risk before entering. Know your stop loss, position 
+   size, and maximum loss tolerance. Risk management trumps profit potential.
+
+2. PLAN YOUR TRADE
+   If you fail to plan, you are planning to fail. Document entry, stop, 
+   target, and thesis before trade execution.
+
+3. TRUST YOUR STOPS
+   Don't trust your stocks, trust your stops. Honor your stop losses without 
+   hesitation. The market doesn't care about your opinion.
+
+4. BETTER OUT THAN IN
+   Better to be out and want in, than in and want out. When in doubt, reduce 
+   position or exit. You can always re-enter.
+
+5. P&L GUIDES AGGRESSION
+   Let your P&L guide your level of aggression. When winning, increase size 
+   carefully. When losing, reduce size and go back to basics.
+
+6. ONLY PRICE PAYS
+   Opinions, news, and narratives don't matter. Only price action pays. 
+   Follow the chart, not the story.
+
+7. SELL INTO STRENGTH
+   Sell into strength or you will sell into weakness. Take profits when the 
+   stock is moving up, not when it's collapsing.
+
+8. FAILED MOVES = FAST MOVES
+   From failed moves come fast moves. When a breakout fails, expect rapid 
+   reversal. When support breaks, downside accelerates.
+
+9. NO EARNINGS GAMBLES
+   Don't gamble on earnings. Options decay accelerates and IV crush is real. 
+   Either exit before earnings or size very small.
+
+10. NO EXTENDED STOCKS
+    Don't buy extended stocks. First third of move = best risk/reward. Wait 
+    for consolidation and next clean setup.
+
+11. SELL LOSERS QUICKLY
+    Sell your losers quickly, always. Small losses are acceptable, big losses 
+    destroy accounts. Cut fast, cut clean.
+
+12. NEVER AVERAGE DOWN
+    Never average down on options. Only average up on winners. Losers get 
+    smaller, winners get bigger.
+
+═══════════════════════════════════════════════════════════════
+STAGE ANALYSIS ENTRY RULES
+═══════════════════════════════════════════════════════════════
+
+STAGE 1B - BASING COMPLETION (HIGH RISK)
+• Entry Signal: Stock breaking above 10-week SMA with volume, forming higher lows
+• Confirmation: 10-week crosses above 40-week, weekly chart showing accumulation
+• Options Strategy: Small position ATM calls, 45-60 DTE
+• Stop Loss: Below most recent swing low or base breakdown (-7% to -10%)
+• Risk Level: Highest risk - use smallest position size (25-30% normal size)
+
+STAGE 2 - ADVANCING PHASE (BEST RISK/REWARD)
+• Entry Signal: Breakout above Stage 1 resistance on strong volume, clean 10-EMA & 20-EMA crossback
+• Confirmation: Higher highs, higher lows, trading above 50-day SMA, RS line improving
+• Options Strategy: Full position ATM or slightly ITM calls, 30-60 DTE
+• Stop Loss: Below breakout pivot or 20-day EMA (-4% to -7%)
+• Risk Level: Optimal - first third of Stage 2 offers best risk/reward
+
+STAGE 2 CONTINUATION - MID-STAGE PULLBACK
+• Entry Signal: Pullback to 10-day, 20-day, or 50-day SMA, wedge pop formation
+• Confirmation: Volume dries up on pullback, increases on reversal, EMAs still rising
+• Options Strategy: Starter position, scale up if working, 30-45 DTE
+• Stop Loss: Below pullback low or key moving average (-5% to -8%)
+• Risk Level: Medium - depends on extension from base
+
+STAGE 3 - TOPPING PHASE (AVOID)
+• Characteristics: Choppy price action, 10-week crossing below 40-week, distribution
+• Action: Exit longs, take profits, move stops to cost. No new long entries.
+• Options Strategy: Close calls, consider puts for short setup if clear Stage 4 developing
+
+STAGE 4 - DECLINING PHASE (SHORT ONLY)
+• Entry Signal: Breakdown below Stage 3 support, 10-week clearly below 40-week
+• Confirmation: Lower highs, lower lows, below 50-day and 200-day, RS line weak
+• Options Strategy: ATM or slightly OTM puts, 30-60 DTE
+• Stop Loss: Above recent swing high or breakdown resistance (+5% to +8%)
+
+═══════════════════════════════════════════════════════════════
+WEEKLY OPTIONS TRADING RULES (SMALL ACCOUNT BUILDER)
+═══════════════════════════════════════════════════════════════
+
+⚠️ HIGH RISK STRATEGY - Extreme theta decay, requires precise timing
+
+WHEN TO TRADE WEEKLIES:
+• Account Size: Under $5,000 where 30+ DTE contracts are too expensive
+• Strong Conviction Only: Clear Stage 2 momentum plays with catalyst
+• Short Hold Time: Plan to hold 1-3 days maximum, not full week
+• High Probability Setups: Bull flags, wedge pops, clean breakouts with volume
+
+WEEKLY OPTIONS ENTRY RULES:
+• Monday/Tuesday Entry: Enter early week (Mon-Tue), avoid Thursday/Friday entries
+• Stage 2 Confirmed: Stock must be in clear Stage 2, above 10/20 EMA, 50-day rising
+• Catalyst Present: Sector rotation, market strength, breakout in progress
+• Volume Confirmation: Above-average volume on entry day (1.5x+ daily average)
+• Strike Selection: ATM or 1 strike OTM maximum (avoid deep OTM lottery tickets)
+• Expiration: Current week or next week only (5-12 days to expiration)
+
+POSITION SIZING FOR WEEKLIES:
+• Max Risk: 1-2% of total account per trade
+• Smaller Contract Count: Buy fewer contracts than you think (they move fast)
+• No All-In: Never use more than 20% of account on single weekly trade
+• Scale In Forbidden: Enter full position at once (no time to scale)
+
+EXIT STRATEGY FOR WEEKLIES (CRITICAL):
+• +30% Rule: Take profit at +30% minimum. Don't get greedy with theta decay.
+• +50% Auto-Sell: Sell at least 50% of position at +50% gain
+• +100% Exit All: If you hit +100%, sell everything immediately
+• Daily Close Rule: If trade not working by market close Day 1, consider exiting
+• Wednesday Exit: Exit all remaining positions by Wednesday close (theta accelerates Thu/Fri)
+• Down 25% = Cut: If down 25% from entry, exit immediately no questions asked
+
+WEEKLY OPTIONS DON'Ts:
+✗ No Earnings Holds: NEVER hold weeklies through earnings (IV crush will destroy you)
+✗ No FOMC/Fed Days: Avoid weeklies on major Fed announcement days
+✗ No Averaging Down: If weekly goes against you, cut it. Never add to loser.
+✗ No Hoping: Don't hold losing weeklies hoping for recovery. Time decay is relentless.
+✗ No Extended Stocks: Don't buy weeklies on stocks already up 20%+ in short time
+✗ No Low Liquidity: Weekly contracts must have 50+ daily volume minimum
+
+BUILDING A SMALL ACCOUNT WITH WEEKLIES:
+• High Win Rate Focus: You need 60%+ win rate to overcome losses. Be selective.
+• Compound Wins: After 3 consecutive winners, increase position size by 25%
+• After Loss, Shrink: After any loss, reduce next position size by 50%
+• Track Weekly Results: Document every weekly trade separately from regular trades
+• Transition Goal: Once account reaches $5K-10K, transition to 30+ DTE contracts
+• Weekly Budget: Limit weekly trades to 2-3 per week maximum (overtrading kills)
+
+BEST STOCKS FOR WEEKLY OPTIONS:
+• High Volume: SPY, QQQ, AAPL, TSLA, NVDA, AMD, MSFT (liquid options)
+• High IV: Stocks with elevated implied volatility (options move more)
+• Clear Trends: Strong Stage 2 momentum stocks, not choppy Stage 3
+• Sector Leaders: Leading stocks in leading sectors
+
+═══════════════════════════════════════════════════════════════
+OPTIONS-SPECIFIC RULES
+═══════════════════════════════════════════════════════════════
+
+CONTRACT SELECTION:
+• Time Decay: 30-60 DTE for swing trades, 45-90 DTE for position trades
+• Strike Selection: ATM or slightly ITM for lower risk, OTM for aggressive plays
+• Liquidity: Minimum 100 daily volume, tight bid-ask spread (under 10% of premium)
+
+POSITION SIZING:
+• Max Risk Per Trade: 1-2% of account on any single options trade
+• Options Allocation: No more than 20-30% of portfolio in options at once
+• Scale In: Start with 1/3 position, add on confirmation
+• Never Go Full Size: Options volatility demands smaller sizing
+
+PROFIT TAKING STRATEGY:
+• Free Roll Target: Sell 1/3 to 1/2 at +50% to +100% to recover cost basis
+• Scale Out: Take 1/3 at R1 target, 1/3 at R2, let 1/3 run with trailing stop
+• Time-Based Exit: Consider exiting at 14 DTE even if winning (theta acceleration)
+• IV Crush Awareness: Exit before earnings or major catalyst events
+
+═══════════════════════════════════════════════════════════════
+WEBULL STOP LOSS PRACTICES
+═══════════════════════════════════════════════════════════════
+
+INITIAL STOP LOSS (ENTRY):
+• Set Immediately: Place stop order the second you enter position
+• Stop Type: Use LIMIT orders, not market orders (prevents slippage on options)
+• Stage 2 Breakout: Stop at -5% to -7% below breakout point or pivot low
+• Stage 2 Pullback: Stop at -5% to -8% below entry or key moving average
+• Stage 1B/Early: Wider stop -7% to -10% (more volatile)
+
+TRAILING STOPS ON WEBULL (FOR WINNERS):
+⚠️ Important: Webull trailing stops are DAY orders only, NOT GTC. Reset daily.
+
+How to Set Trailing Stop on Webull:
+1. Open position → Click "Sell" → Select "Trailing Stop"
+2. Choose between $ amount or % trailing (recommend % for options)
+3. Set trail percentage: 15-20% for options volatility
+4. Set daily before market open (trailing stops don't carry overnight)
+
+Trailing Stop Strategy:
+• Once +25% profit: Move stop to breakeven (cost basis)
+• Once +50% profit: Lock in +25% with trailing stop
+• Once +100% profit: Take 1/3 to 1/2 off, trail remainder at 15-20%
+• For multi-day holds: Trail at 10-day EMA or 20-day EMA (check daily)
+• For runners: Switch to manual stops at key support levels vs. trailing %
+
+MANUAL STOP ADJUSTMENTS:
+• Daily Task: Adjust stop loss every morning based on previous day's action
+• Stage 2 In Motion: Raise stop to below prior day low or last support
+• Use Technical Levels: Trail below 10-EMA (aggressive) or 20-EMA (conservative)
+• Never Lower Stops: Stops only move up on winners, never down
+
+EMERGENCY EXIT RULES:
+• 20-EMA Break: If stock decisively loses 20-day EMA, exit immediately
+• Stage Change: Any sign of Stage 2 → Stage 3 transition, exit
+• Market Crash: If SPY breaks major support, close all options immediately
+• Down 20%: If option down 20% from entry, exit no excuses
+
+═══════════════════════════════════════════════════════════════
+PRE-TRADE CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Before entering any trade, verify ALL of the following:
+
+□ Stock is in Stage 2 (advancing) or clear Stage 2 continuation setup
+□ 10-day EMA > 20-day EMA, price above both
+□ 50-day SMA rising, price above 50-day
+□ Volume confirms breakout or reversal (above 20-day avg)
+□ Relative strength vs. SPY is positive or improving
+□ Not extended (within 15% of 50-day SMA)
+□ Options contract has sufficient liquidity (100+ daily volume)
+□ Bid-ask spread is tight (under 10% of premium)
+□ 30+ DTE remaining on contract (or 5-12 DTE if weekly)
+□ No earnings within next 7 days
+□ SPY/QQQ in Stage 2 or at minimum not breaking down
+□ Stop loss level defined (price point)
+□ Position size calculated (1-2% max risk)
+□ Profit targets defined (R1, R2, runner targets)
+□ Trade thesis written in journal before entry
+
+═══════════════════════════════════════════════════════════════
+DAILY TRADING JOURNAL TEMPLATE
+═══════════════════════════════════════════════════════════════
+
+Date: _______________
+
+Market Condition (SPY/QQQ Stage):
+□ Stage 2 - Bullish
+□ Stage 2 Continuation
+□ Stage 3 - Choppy
+□ Stage 4 - Bearish
+□ Stage 1 - Basing
+
+Psychology / Emotional State:
+□ Focused & Disciplined
+□ Confident
+□ Neutral
+□ Anxious
+□ Revenge Trading
+□ FOMO
+□ Overconfident
+
+Number of Trades Today: _______
+
+Daily P&L: $ _______
+
+═══════════════════════════════════════════════════════════════
+
+WHAT WORKED TODAY:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+WHAT DIDN'T WORK TODAY:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+KEY LESSONS LEARNED:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+RULES I FOLLOWED TODAY:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+RULES I BROKE TODAY (Why? How to prevent?):
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+═══════════════════════════════════════════════════════════════
+
+TOMORROW'S PLAN:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+═══════════════════════════════════════════════════════════════
+END OF TRADING RULESET
+═══════════════════════════════════════════════════════════════
+
+Print this document and keep it with you during trading hours.
+Review rules before every trading session.
+Update journal daily - consistency builds discipline.
+`;
+
+            const blob = new Blob([rulesetContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Trading_Ruleset_Journal_Template.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Utility Functions
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Initialize displays
+        displayJournalEntries();
+        displayTrades();
+        updateStats();
+    </script>
+</body>
+</html>
